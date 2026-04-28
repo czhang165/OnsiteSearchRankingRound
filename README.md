@@ -83,6 +83,41 @@ All methods perform well because mechanical engineering credentials are explicit
 
 ---
 
+## Discussion
+
+### How close are we to the theoretical optimal?
+
+The theoretical maximum is 100 per profession — every submitted candidate passes all hard criteria and scores 10/10 on every soft criterion. Our best method (LLM, 59.4 average) captures roughly **60% of the available signal**. The gap varies significantly by profession:
+
+**Close to optimal (within ~10 points):**
+- `mechanical_engineers` (93.3), `tax_lawyer` (87.7), `bankers` (78.0), `mathematics_phd` (79.0)
+- Hard filters are accurate, the 200k pool contains plenty of qualifying candidates, and the top-200 ANN results are clean. The remaining gap is mostly soft criteria variance — a few slightly weaker candidates in the submitted top 10 pulling the average down. Better reranking or a larger ANN pool could close this.
+
+**Moderate gap (~20–35 points below optimal):**
+- `radiology` (69.3), `biology_expert` (69.7), `quantitative_finance` (65.0), `junior_corporate_lawyer` (63.8)
+- Hard filters are approximately right but the retrieval pool isn't perfectly clean. Key unlocks: Turbopuffer's `filters` param to pre-restrict candidates by attribute before ANN (e.g. find only MBA holders for quant finance), and using `QueryExpander.build_profession_query()` as the ANN query instead of the short keyword stack to improve top-200 recall.
+
+**Far from optimal (~40–75 points below):**
+- `doctors_md` (25.5), `anthropology` (20.3)
+- The bottleneck is retrieval and hard filter accuracy, not reranking. `top_us_md_degree` and `recent_phd_program` cannot be reliably approximated from the normalized schema fields — no reranker can compensate for a retrieval pool that doesn't contain enough qualifying candidates. Solving these would require either Turbopuffer attribute filtering on school names or a fundamentally different retrieval strategy.
+
+---
+
+### Are these scores out-of-sample?
+
+No — the reported scores are better described as **validation set performance**, not true out-of-sample test performance.
+
+We iterated against the eval API directly throughout development. Every hard filter fix (`"md"` instead of `"doctorate"`, MBBS → `deg_fos` keywords, `deg_start_years` for anthropology recency) was guided by reading `individual_results` from eval responses. We also selected the best reranker per profession by comparing eval scores across all 6 methods. Both of these are forms of fitting to the evaluation signal — equivalent to tuning hyperparameters on a test set.
+
+The scores are still meaningful for understanding **relative method performance** (LLM vs BM25 vs dense, etc.), but the absolute numbers are likely optimistic compared to what we'd see on:
+- Genuinely new professions never evaluated during development
+- A different candidate pool
+- A held-out set of rubric criteria we never received feedback on
+
+A true out-of-sample evaluation would require running the final pipeline on a set of professions that were never used to guide any pipeline decision — including hard filter design, query tuning, and reranker selection.
+
+---
+
 ## Future Work
 
 - **Dynamic soft-criteria weighting**: learn weights for each criterion's contribution to `final_score` across configs, then use weighted scoring in the LLM prompt.
