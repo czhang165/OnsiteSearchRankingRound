@@ -50,7 +50,7 @@ TURBOPUFFER_API_KEY = os.environ["TURBOPUFFER_API_KEY"]
 VOYAGE_API_KEY      = os.environ["VOYAGE_API_KEY"]
 OAI_KEY             = os.environ["OAI_KEY"]
 EVAL_EMAIL          = os.environ["EVAL_EMAIL"]
-EVAL_ENDPOINT       = "https://mercor-dev--search-eng-interview.modal.run/evaluate"
+EVAL_ENDPOINT       = os.environ["EVAL_ENDPOINT"]
 TPUF_NAMESPACE      = "search-test-v4"
 TPUF_REGION         = "aws-us-west-2"
 
